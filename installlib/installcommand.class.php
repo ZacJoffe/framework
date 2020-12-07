@@ -58,11 +58,11 @@ class FreePBXInstallCommand extends Command {
 			'description' => 'Skip installing local modules (except Framework, Core, Dashboard, Voicemail and Sip Settings)'
 		),
 		'webroot' => array(
-			'default' => '/var/www/html',
+			'default' => '/usr/local/www/freepbx',
 	 		'description' => 'Filesystem location from which FreePBX files will be served'
 		),
 		'astetcdir' => array(
-			'default' => '/etc/asterisk',
+			'default' => '/usr/local/etc/asterisk',
 			'description' => 'Filesystem location from which Asterisk configuration files will be served'
 		),
 		'astmoddir' => array(
@@ -98,7 +98,7 @@ class FreePBXInstallCommand extends Command {
 			'description' => 'Location of the FreePBX (root) command line scripts'
 		),
 		'ampcgibin' => array(
-			'default' => '/var/www/cgi-bin',
+			'default' => '/usr/local/www/apache24/cgi-bin',
 			'description' => 'Location of the Apache cgi-bin executables'
 		),
 		'ampplayback' => array(
@@ -157,14 +157,14 @@ class FreePBXInstallCommand extends Command {
 		$output->getFormatter()->setStyle('bold', $style);
 
 		//STATIC???
-		define("AMP_CONF", "/etc/amportal.conf");
-		define("ODBC_INI", "/etc/odbc.ini");
+		define("AMP_CONF", "/usr/local/etc/amportal.conf");
+		define("ODBC_INI", "/usr/local/etc/odbc.ini");
 		if (PHP_OS == "FreeBSD") {
 			define("ASTERISK_CONF", "/usr/local/etc/asterisk/asterisk.conf");
 		} else {
 			define("ASTERISK_CONF", "/etc/asterisk/asterisk.conf");
 		}
-		$freepbx_conf_path = "/etc/freepbx.conf";
+		$freepbx_conf_path = "/usr/local/etc/freepbx.conf";
 		define("FILES_DIR",$this->rootPath."/installlib/files");
 		define("SQL_DIR", $this->rootPath."/installlib/SQL");
 		define("MODULE_DIR", $this->rootPath."/amp_conf/htdocs/admin/modules");
@@ -238,7 +238,7 @@ class FreePBXInstallCommand extends Command {
 
 		if(!file_exists(ASTERISK_CONF) || $force) {
 			if(isset($aconf['directories']['astetcdir'])) {
-				$aconf['directories']['astetcdir'] = !empty($answers['astetcdir']) ? $answers['astetcdir'] : "/etc/asterisk";
+				$aconf['directories']['astetcdir'] = !empty($answers['astetcdir']) ? $answers['astetcdir'] : "/usr/local/etc/asterisk";
 			}
 			if(isset($aconf['directories']['astmoddir'])) {
 				$aconf['directories']['astmoddir'] = !empty($answers['astmoddir']) ? $answers['astmoddir'] : (file_exists('/usr/lib64/asterisk/modules') ? '/usr/lib64/asterisk/modules' : '/usr/lib/asterisk/modules');
@@ -270,52 +270,6 @@ class FreePBXInstallCommand extends Command {
 		$output->write("Checking if Asterisk is running and we can talk to it as the '".$answers['user']."' user...");
 		$c = 0;
 		$determined = false;
-		While($c < 5) {
-			// Ensure $tmpout is empty
-			$tmpout = [];
-			$lastline = exec("runuser " . $answers['user'] . ' -s /bin/bash -c "cd ~/ && asterisk -rx \'core show version\' 2>&1"', $tmpout, $ret);
-			if ($ret != 0) {
-				$output->writeln("<error>Error!</error>");
-				$output->writeln("<error>Error communicating with Asterisk.  Ensure that Asterisk is properly installed and running as the ".$answers['user']." user</error>");
-				if(file_exists($asterisk_conf['astrundir']."/asterisk.ctl")) {
-					$info = posix_getpwuid(fileowner($asterisk_conf['astrundir']."/asterisk.ctl"));
-					$output->writeln("<error>Asterisk appears to be running as ".$info['name']."</error>");
-				} else {
-					$output->writeln("<error>Asterisk does not appear to be running</error>");
-				}
-				$output->writeln("<error>Try starting Asterisk with the './start_asterisk start' command in this directory</error>");
-				exit(1);
-			}
-			// If this machine doesn't have an ethernet interface (which opens a WHOLE NEW can of worms),
-			// asterisk will say "No ethernet interface detected". There may, also, be other errors about
-			// other modules or configuration issues. The last line, however, is always the version.
-			$astver = trim(array_pop($tmpout));
-
-			// Parse Asterisk version.
-			if (preg_match('/^Asterisk (?:SVN-|GIT-)?(?:branch-)?(\d+(\.\d+)*)(-?(.*)) built/', $astver, $matches)) {
-				$determined = true;
-				if (version_compare($matches[1], "13", "lt") || version_compare($matches[1], "19", "ge")) {
-					$output->writeln("<error>Error!</error>");
-					$output->writeln("<error>Unsupported Version of ". $matches[1]."</error>");
-					$output->writeln("<error>Supported Asterisk versions: 13, 14, 15, 16, 17, 18</error>");
-					exit(1);
-				}
-				$output->writeln("Yes. Determined Asterisk version to be: ".$matches[1]);
-				break;
-			}
-			sleep(1);
-			$c++;
-		}
-		if(!$determined) {
-			if(!empty($astver)) {
-				$output->writeln("<error>Error!</error>");
-				$output->writeln("<error>Could not determine Asterisk version (got: " . $astver . "). Please report this.</error>");
-			} else {
-				$output->writeln("<error>Error!</error>");
-				$output->writeln("<error>Could not determine Asterisk version. Error was '".$lastline."'</error>");
-			}
-			exit(1);
-		}
 
 		$output->write("Checking if NodeJS is installed and we can get a version from it...");
 		$nodejsout = exec("node --version"); //v0.10.29
@@ -364,7 +318,9 @@ class FreePBXInstallCommand extends Command {
 			if(!file_exists($answers['webroot']."/admin")) {
 				mkdir($answers['webroot']."/admin");
 			}
-			touch($answers['webroot']."/admin/bootstrap.php");
+			if(!touch($answers['webroot']."/admin/bootstrap.php")) {
+				$output->writeln("COULD NOT CREATE FILE bootstrap.php");
+			}
 			$output->writeln("Partial");
 			$bootstrap_settings['returnimmediately'] = true;
 			include_once $freepbx_conf_path;
@@ -549,9 +505,9 @@ class FreePBXInstallCommand extends Command {
 						$tname = (string)$table->attributes()->name;
 						$dbtables[] = $tname;
 					}
-					outn(sprintf(_("Updating tables %s..."),implode(", ",$dbtables)));
+					/* out(sprintf(_("Updating tables %s..."),implode(", ",$dbtables))); */
 					$fbxdb->migrateMultipleXML($xml->database->table);
-					out(_("Done"));
+					/* out(_("Done")); */
 				} else {
 					throw new \Exception("There's no default database information!");
 				}
@@ -587,16 +543,16 @@ class FreePBXInstallCommand extends Command {
 					$tname = (string)$table->attributes()->name;
 					$dbtables[] = $tname;
 				}
-				outn(sprintf(_("Updating tables %s..."),implode(", ",$dbtables)));
-				\FreePBX::Database()->migrateMultipleXML($xml->database->table, false, (string)$xml->version);
-				out(_("Done"));
+				/* out(sprintf(_("Updating tables %s..."),implode(", ",$dbtables))); */
+				/* \FreePBX::Database()->migrateMultipleXML($xml->database->table, false, (string)$xml->version); */
+				/* out(_("Done")); */
 			} else {
 				throw new \Exception("There's no default database information!");
 			}
 		}
 
 		// Get version of FreePBX.
-		$version = $installer->get_version();
+		/* $version = $installer->get_version(); */
 
 		$output->writeln("Initializing FreePBX Settings");
 		$installer_amp_conf = $amp_conf;
@@ -780,7 +736,7 @@ class FreePBXInstallCommand extends Command {
 
 		//setup and get manager working
 		$output->write("Setting up Asterisk Manager Connection...");
-		exec("runuser " . $answers['user'] . ' -s /bin/bash -c "cd ~/ && asterisk -rx \'module reload manager\' 2>&1"',$o,$r);
+		exec("su -m " . $answers['user'] . ' -s /bin/bash -c "cd ~/ && asterisk -rx \'module reload manager\' 2>&1"',$o,$r);
 		if($r !== 0) {
 			$output->writeln("<error>Unable to reload Asterisk Manager</error>");
 			exit(127);
@@ -805,9 +761,8 @@ class FreePBXInstallCommand extends Command {
 		}
 		$output->writeln("Done");
 
-		if ($newinstall) {
-			/* Write freepbx.conf */
-			$conf = "<?php
+		/* Write freepbx.conf */
+		$conf = "<?php
 \$amp_conf['AMPDBUSER'] = '{$amp_conf['AMPDBUSER']}';
 \$amp_conf['AMPDBPASS'] = '{$amp_conf['AMPDBPASS']}';
 \$amp_conf['AMPDBHOST'] = '{$amp_conf['AMPDBHOST']}';
@@ -819,14 +774,15 @@ class FreePBXInstallCommand extends Command {
 require_once('{$amp_conf['AMPWEBROOT']}/admin/bootstrap.php');
 ?>
 ";
-			$output->write("Writing out ".$freepbx_conf_path."...");
-			if(!file_put_contents($freepbx_conf_path, $conf)) {
-				$output->writeln("<error>Error!</error>");
-				$output->writeln("<error>Unable to write to file</error>");
-				exit(1);
-			}
-			$output->writeln("Done");
+		$output->write("Writing out ".$freepbx_conf_path."...");
+		if(!file_put_contents($freepbx_conf_path, $conf)) {
+			$output->writeln("<error>Error!</error>");
+			$output->writeln("<error>Unable to write to file</error>");
+			exit(1);
 		}
+		$output->writeln("Done");
+
+		$amp_conf['AMPSBIN'] = "/usr/sbin";
 
 		// Sanity check - trap error as reported in
 		// http://issues.freepbx.org/browse/FREEPBX-9898
@@ -895,7 +851,7 @@ require_once('{$amp_conf['AMPWEBROOT']}/admin/bootstrap.php');
 
 		// generate_configs();
 		$output->writeln("Generating default configurations...");
-		system("runuser " . $amp_conf['AMPASTERISKUSER'] . ' -s /bin/bash -c "cd ~/ && '.$amp_conf["AMPSBIN"].'/fwconsole reload &>/dev/null"');
+		system("su -m " . $amp_conf['AMPASTERISKUSER'] . ' -s /bin/bash -c "cd ~/ && '.$amp_conf["AMPSBIN"].'/fwconsole reload &>/dev/null"');
 		$output->writeln("Finished generating default configurations");
 
 		$output->writeln("<info>You have successfully installed FreePBX</info>");
@@ -969,10 +925,10 @@ require_once('{$amp_conf['AMPWEBROOT']}/admin/bootstrap.php');
 
 		// These are modified by apply_conf.sh, and should never be symlinked
 		$never_symlink = array(
-			"/etc/asterisk/cdr_adaptive_odbc.conf" => true,
-			"/etc/asterisk/indications.conf" => true,
-			"/etc/asterisk/manager.conf" => true,
-			"/etc/asterisk/modules.conf" => true,
+			"/usr/local/etc/asterisk/cdr_adaptive_odbc.conf" => true,
+			"/usr/local/etc/asterisk/indications.conf" => true,
+			"/usr/local/etc/asterisk/manager.conf" => true,
+			"/usr/local/etc/asterisk/modules.conf" => true,
 		);
 
 		// Our installer knows where everything should go.

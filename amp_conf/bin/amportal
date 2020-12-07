@@ -4,14 +4,14 @@
 #
 
 # get settings from db/config file
-if [ -e "/etc/freepbx.conf" ]; then        # Check if file exists.
+if [ -e "/usr/local/etc/freepbx.conf" ]; then        # Check if file exists.
 	php -v > /dev/null 2>&1
 	if [ $? -eq 0 ]; then
   		`php -r '
 		$bootstrap_settings["freepbx_auth"] = false;
 		$bootstrap_settings["skip_astman"] = true;
 		$restrict_mods = true;
-		include "/etc/freepbx.conf";
+		include "/usr/local/etc/freepbx.conf";
 		foreach($amp_conf as $key => $val) {
 			$val = str_replace(array("\r", "\n", "\r\n"), ",", $val);
 			if (is_bool($val)) {

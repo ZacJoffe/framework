@@ -826,7 +826,7 @@ class Installer {
 	);
 
 	$settings[$category]['AMPWEBROOT'] = array(
-	'value' => '/var/www/html',
+	'value' => '/usr/local/www/freepbx',
 	'options' => '',
 	'name' => 'FreePBX Web Root Dir',
 	'description' => 'The path to Apache webroot (leave off trailing slash).',
@@ -836,7 +836,7 @@ class Installer {
 	);
 
 	$settings[$category]['ASTAGIDIR'] = array(
-	'value' => '/var/lib/asterisk/agi-bin',
+	'value' => '/usr/local/share/asterisk/agi-bin',
 	'options' => '',
 	'name' => 'Asterisk AGI Dir',
 	'description' => 'This is the default directory for Asterisks agi files.',
@@ -846,7 +846,7 @@ class Installer {
 	);
 
 	$settings[$category]['ASTETCDIR'] = array(
-	'value' => '/etc/asterisk',
+	'value' => '/usr/local/etc/asterisk',
 	'options' => '',
 	'name' => 'Asterisk etc Dir',
 	'description' => 'This is the default directory for Asterisks configuration files.',
@@ -866,7 +866,7 @@ class Installer {
 	);
 
 	$settings[$category]['ASTMODDIR'] = array(
-	'value' => '/usr/lib/asterisk/modules',
+	'value' => '/usr/local/lib/asterisk/modules',
 	'options' => '',
 	'name' => 'Asterisk Modules Dir',
 	'description' => 'This is the default directory for Asterisks modules.',
@@ -896,7 +896,7 @@ class Installer {
 	);
 
 	$settings[$category]['ASTVARLIBDIR'] = array(
-	'value' => '/var/lib/asterisk',
+	'value' => '/usr/local/lib/asterisk/modules',
 	'options' => '',
 	'name' => 'Asterisk bin Dir',
 	'description' => 'This is the default directory for Asterisks lib files.',
@@ -906,7 +906,7 @@ class Installer {
 	);
 
 	$settings[$category]['AMPPLAYBACK'] = array(
-	'value' => '/var/lib/asterisk/playback',
+	'value' => '/var/spool/asterisk/playback',
 	'options' => '',
 	'name' => 'Browser Playback Cache Directory',
 	'description' => 'This is the default directory for HTML5 releated playback files',
@@ -916,7 +916,7 @@ class Installer {
 	);
 
 	$settings[$category]['AMPCGIBIN'] = array(
-	'value' => '/var/www/cgi-bin',
+	'value' => '/usr/local/www/apache24/cgi-bin',
 	'options' => '',
 	'name' => 'CGI Dir',
 	'description' => 'The path to Apache cgi-bin dir (leave off trailing slash).',
@@ -936,7 +936,7 @@ class Installer {
 	);
 
 	$settings[$category]['CERTKEYLOC'] = array(
-	'value' => '/etc/asterisk/keys',
+	'value' => '/usr/local/etc/asterisk/keys',
 	'options' => '',
 	'name' => 'Certificate File Location',
 	'description' => 'The location for Asterisk Certificates',
